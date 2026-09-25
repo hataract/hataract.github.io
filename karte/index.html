@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="google" content="notranslate">
+<meta name="theme-color" content="#25327C">
+<title>姿勢カルテ</title>
+<!--
+  姿勢カルテ 表示ページ
+  - カルテの中身はURLの「#」以降に入っており、サーバーには送られない
+  - 写真・個人名は扱わない
+  - 表示は textContent のみで行う（URLを書き換えた不正な文字列を実行させないため）
+  - アイコンは Lucide Icons（ISCライセンス）の図形をページ内に直接記述
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#25327C; --orange:#EF8A28; --offwhite:#FBF6EC;
+  --orange-soft:#FFF1E2; --orange-mid:#FDE3C8;
+  --ink:#2A2F4A; --sub:#7C8199; --line:#EFE9DD;
+  --shadow:0 2px 12px rgba(37,50,124,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:#fff;color:var(--ink);
+  font-family:"Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;
+  line-height:1.75;font-size:16px}
+.wrap{max-width:480px;margin:0 auto;padding:0 0 40px}
+.body{padding:0 16px}
+svg{display:block}
+
+/* ===== ヘッダー ===== */
+.hero{background:var(--navy);color:#fff;padding:28px 24px 34px;border-radius:0 0 24px 24px;
+  position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;width:180px;height:180px;border-radius:50%;
+  right:-50px;top:-60px;background:rgba(255,255,255,.06)}
+.hero::after{content:"";position:absolute;width:90px;height:90px;border-radius:50%;
+  right:40px;bottom:-45px;background:var(--orange);opacity:.9}
+.hero .brand{font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--orange)}
+.hero h1{font-size:32px;font-weight:700;letter-spacing:.08em;margin-top:4px;line-height:1.4}
+.hero .date{display:inline-flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;
+  background:rgba(255,255,255,.12);border-radius:999px;padding:4px 14px}
+.hero .date svg{width:15px;height:15px;color:var(--orange)}
+.hero .lead{font-size:13px;color:#D5DAF0;margin-top:12px;position:relative;z-index:1}
+
+/* ===== セクション ===== */
+section{margin-top:32px}
+h2{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--orange);flex:none}
+.stack{display:flex;flex-direction:column;gap:12px}
+.card{background:#fff;border-radius:16px;padding:16px 18px;box-shadow:var(--shadow)}
+
+/* オレンジの丸アイコン */
+.ic{width:44px;height:44px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--orange-soft);color:var(--orange)}
+.ic svg{width:22px;height:22px}
+
+/* ===== 1. 姿勢の特徴 ===== */
+.feat{display:flex;gap:14px;align-items:center}
+.feat .t{font-size:16px;font-weight:500;line-height:1.6}
+.tag{display:inline-block;font-size:11px;color:var(--sub);background:var(--offwhite);border-radius:999px;
+  padding:1px 10px;margin-top:6px}
+
+/* ===== 2. ワンポイント ===== */
+.onepoint{background:var(--orange-soft);box-shadow:none;display:flex;gap:14px;align-items:flex-start;padding:18px}
+.onepoint .ic{background:#fff}
+.onepoint .who{font-size:12px;font-weight:700;color:var(--orange)}
+.onepoint .t{font-size:15px;white-space:pre-wrap;margin-top:2px}
+
+/* ===== 3. セルフケア ===== */
+.ex{display:flex;gap:14px;align-items:flex-start;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  border:2px solid transparent;transition:border-color .15s}
+.box{width:28px;height:28px;flex:none;border:2px solid #D9D4E8;border-radius:50%;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;color:#fff;transition:.15s}
+.box svg{width:16px;height:16px;opacity:0}
+.ex.done{border-color:var(--orange-mid)}
+.ex.done .box{background:var(--orange);border-color:var(--orange)}
+.ex.done .box svg{opacity:1}
+.ex .head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.ex .name{font-size:17px;font-weight:700;color:var(--navy)}
+.badge{display:inline-flex;align-items:center;font-size:13px;font-weight:700;color:#fff;background:var(--navy);
+  border-radius:999px;padding:1px 12px;line-height:1.7}
+.badge.first{background:var(--orange)}
+.ex .d{font-size:14px;margin-top:4px;color:var(--ink)}
+.hint{font-size:13px;color:var(--sub);margin-top:10px;padding:0 4px}
+
+/* ===== 4. まずはこれ（大きく） ===== */
+.focus{background:var(--orange-soft);border:2px solid var(--orange-mid);border-radius:16px;
+  padding:22px 20px;text-align:center}
+.focus .ic{margin:0 auto;background:var(--orange);color:#fff;width:52px;height:52px}
+.focus .ic svg{width:26px;height:26px}
+.focus .lbl{font-size:14px;font-weight:700;color:var(--orange);margin-top:12px}
+.focus .big{font-size:24px;font-weight:700;color:var(--navy);margin-top:2px;line-height:1.5}
+.focus .reps{display:inline-block;font-size:15px;font-weight:700;color:var(--orange);background:#fff;
+  border-radius:999px;padding:2px 16px;margin-top:8px}
+.focus .note{font-size:14px;margin-top:12px}
+
+/* ===== アンケート ===== */
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--navy);color:#fff;
+  font-weight:700;font-size:16px;text-decoration:none;border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.btn svg{width:20px;height:20px;color:var(--orange)}
+.btn-sub{text-align:center;font-size:12px;color:var(--sub);margin-top:8px}
+
+/* ===== 5. HatarACTメッセージ ===== */
+.msg{background:var(--offwhite);box-shadow:none;padding:24px 20px;text-align:center}
+.msg .ic{margin:0 auto;background:#fff}
+.msg h3{font-size:17px;color:var(--navy);margin-top:12px;line-height:1.6}
+.msg p{font-size:14px;margin-top:10px;text-align:left}
+.msg .safe{font-size:13px;color:var(--sub);text-align:center}
+.msg .sign{margin-top:20px;padding-top:16px;border-top:1px dashed #E3DAC6}
+.msg .sign .b{font-size:15px;font-weight:700;color:var(--navy);letter-spacing:.1em}
+.msg .sign .b span{color:var(--orange)}
+.msg .sign .s{font-size:12px;color:var(--sub);text-align:center;margin-top:0}
+
+/* ===== 保存方法・注意書き ===== */
+.save{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--sub);margin-top:24px;padding:0 4px}
+.save svg{width:18px;height:18px;flex:none;color:var(--orange);margin-top:3px}
+.disc{font-size:11px;line-height:1.6;color:#A3A7B8;margin-top:14px;padding:0 4px}
+.err{margin:60px 16px 0;text-align:center;color:var(--sub)}
+</style>
+</head>
+<body>
+<main class="wrap" id="app"></main>
+
+<script>
+"use strict";
+// ===== 設定（決まったらここを書き換える） =====
+const FORM_URL = "";   // アンケート（Googleフォーム）のURL。空なら表示しない
+const LIBE_NAME = "";  // リベシティでの名前。空なら表示しない
+
+// セルフケアの定型（app.py の EXERCISES と同じIDにそろえる）
+const EXERCISES = {
+  chin:    ["あご引き", "5回", "頭の位置を整えやすくする運動です。"],
+  chest:   ["胸ストレッチ", "20秒", "胸の前を伸ばして、肩の力を抜きやすくします。"],
+  scap:    ["肩甲骨寄せ", "5回", "背中の筋肉を使って、胸を開きやすくします。"],
+  glute:   ["お尻締め（立ったまま）", "5回", "立ち姿勢を支えやすくします。"],
+  ham:     ["もも裏ストレッチ", "20秒", "腰まわりを動かしやすくします。"],
+  breath:  ["お腹へこませ呼吸", "5呼吸", "お腹の奥の筋肉で体を支えやすくします。"],
+  balance: ["片脚立ち", "左右30秒ずつ", "左右のバランスを感じやすくします。壁や机に手を添えて行いましょう。"],
+};
+
+// ===== アイコン（Lucide Icons） =====
+const SVG_HEAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+const ICON = {
+  personStanding: '<circle cx="12" cy="5" r="1"/><path d="m9 20 3-6 3 6"/><path d="m6 8 6 2 6-2"/><path d="M12 10v4"/>',
+  eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+  messageCircle: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  calendar: '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+  bookmark: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+  pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+};
+
+// ===== 小さなDOMヘルパー（文字は必ず textContent で入れる） =====
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+function svg(name) {  // 固定のSVGだけを入れる。URL由来の文字列は入れない
+  const w = document.createElement("span");
+  w.innerHTML = SVG_HEAD + ICON[name] + "</svg>";
+  return w.firstChild;
+}
+function icon(name) {
+  const e = el("div", "ic");
+  e.appendChild(svg(name));
+  return e;
+}
+function str(v, max) {
+  return typeof v === "string" ? v.slice(0, max) : "";
+}
+
+// ===== URLの#からデータを読む =====
+function readData() {
+  const m = location.hash.match(/^#d=([A-Za-z0-9_-]+)$/);
+  if (!m) return null;
+  try {
+    let b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    const bin = atob(b64);
+    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    const obj = JSON.parse(new TextDecoder().decode(bytes));
+    return (obj && typeof obj === "object" && obj.v === 1) ? obj : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function section(title) {
+  const s = el("section");
+  const h = el("h2");
+  h.appendChild(el("span", "dot"));
+  h.appendChild(document.createTextNode(title));
+  s.appendChild(h);
+  return s;
+}
+
+// セルフケアのデータを { name, reps, desc } にそろえる。不正なものは null
+function toExercise(x) {
+  if (!Array.isArray(x)) return null;
+  if (x[0] === "o") {
+    const name = str(x[1], 20);
+    return name ? { name, reps: str(x[2], 20), desc: str(x[3], 60) } : null;
+  }
+  if (Object.prototype.hasOwnProperty.call(EXERCISES, x[0])) {
+    const b = EXERCISES[x[0]];
+    return { name: b[0], reps: str(x[1], 20) || b[1], desc: str(x[2], 60) || b[2] };
+  }
+  return null;
+}
+
+function render(data) {
+  const app = document.getElementById("app");
+
+  // ヘッダー
+  const hero = el("header", "hero");
+  hero.appendChild(el("div", "brand", "HatarACT"));
+  hero.appendChild(el("h1", null, "姿勢カルテ"));
+  const date = el("div", "date");
+  date.appendChild(svg("calendar"));
+  const ev = str(data.e, 30);
+  date.appendChild(document.createTextNode(str(data.d, 20) + (ev ? "　" + ev : "")));
+  hero.appendChild(date);
+  hero.appendChild(el("p", "lead", "今日のあなたの姿勢と、おすすめのセルフケアをまとめました。"));
+  app.appendChild(hero);
+
+  const body = el("div", "body");
+  app.appendChild(body);
+
+  // 1. 今日の姿勢の特徴
+  const feats = Array.isArray(data.f) ? data.f.slice(0, 3) : [];
+  if (feats.length) {
+    const s = section("今日の姿勢の特徴");
+    const st = el("div", "stack");
+    feats.forEach(f => {
+      if (!Array.isArray(f)) return;
+      const byPhoto = f[1] === "p";
+      const c = el("div", "card feat");
+      c.appendChild(icon(byPhoto ? "personStanding" : "eye"));
+      const b = el("div");
+      b.appendChild(el("div", "t", str(f[0], 60)));
+      b.appendChild(el("span", "tag", byPhoto ? "写真の解析から" : "理学療法士の見立て"));
+      c.appendChild(b);
+      st.appendChild(c);
+    });
+    s.appendChild(st);
+    body.appendChild(s);
+  }
+
+  // 2. ワンポイント
+  const op = str(data.o, 150);
+  if (op) {
+    const s = section("理学療法士からのワンポイント");
+    const c = el("div", "card onepoint");
+    c.appendChild(icon("messageCircle"));
+    const b = el("div");
+    b.appendChild(el("div", "who", "理学療法士より"));
+    b.appendChild(el("div", "t", op));
+    c.appendChild(b);
+    s.appendChild(c);
+    body.appendChild(s);
+  }
+
+  // 3. セルフケア
+  const exs = (Array.isArray(data.x) ? data.x.slice(0, 3) : []).map(toExercise);
+  const first = Number.isInteger(data.m) ? data.m : -1;
+  if (exs.some(Boolean)) {
+    const s = section("今日おすすめしたセルフケア");
+    const st = el("div", "stack");
+    exs.forEach((x, i) => {
+      if (!x) return;
+      const c = el("div", "card ex");
+      c.setAttribute("role", "checkbox");
+      c.setAttribute("aria-checked", "false");
+      c.tabIndex = 0;
+      const box = el("div", "box");
+      box.appendChild(svg("check"));
+      c.appendChild(box);
+      const b = el("div");
+      const head = el("div", "head");
+      head.appendChild(el("span", "name", x.name));
+      if (x.reps) head.appendChild(el("span", "badge", x.reps));
+      if (i === first) head.appendChild(el("span", "badge first", "まずはこれ"));
+      b.appendChild(head);
+      if (x.desc) b.appendChild(el("div", "d", x.desc));
+      c.appendChild(b);
+      const toggle = () => {
+        const on = c.classList.toggle("done");
+        c.setAttribute("aria-checked", on ? "true" : "false");
+      };
+      c.addEventListener("click", toggle);
+      c.addEventListener("keydown", e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggle(); } });
+      st.appendChild(c);
+    });
+    s.appendChild(st);
+    s.appendChild(el("p", "hint", "やったらタップしてチェックできます。"));
+    body.appendChild(s);
+  }
+
+  // 4. まずはこれ（1つだけを大きく）
+  const fx = exs[first];
+  if (fx) {
+    const s = el("section");
+    const c = el("div", "focus");
+    c.appendChild(icon("target"));
+    c.appendChild(el("div", "lbl", "今日から、まずはこれだけ"));
+    c.appendChild(el("div", "big", fx.name));
+    if (fx.reps) c.appendChild(el("div", "reps", fx.reps));
+    c.appendChild(el("p", "note", "毎日でなくて大丈夫です。思い出したときに1回やれば十分です。"));
+    s.appendChild(c);
+    body.appendChild(s);
+  }
+
+  // アンケート（URLが設定されていて、Googleフォームのときだけ）
+  if (/^https:\/\/(docs\.google\.com\/forms\/|forms\.gle\/)/.test(FORM_URL)) {
+    const s = el("section");
+    const a = el("a", "btn");
+    a.href = FORM_URL;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.appendChild(svg("pencil"));
+    a.appendChild(document.createTextNode("アンケートに答える"));
+    s.appendChild(a);
+    s.appendChild(el("p", "btn-sub", "1分で終わります（お名前は不要です）"));
+    body.appendChild(s);
+  }
+
+  // 5. HatarACTメッセージ
+  const ms = el("section");
+  const mc = el("div", "card msg");
+  mc.appendChild(icon("heart"));
+  mc.appendChild(el("h3", null, "今日の姿勢は“今の体の特徴”です。"));
+  mc.appendChild(el("p", null,
+    "姿勢には一人ひとりの特徴があります。今日の結果は、現在の姿勢の傾向を見える化したものです。無理のない範囲でセルフケアを続けてみましょう。"));
+  mc.appendChild(el("p", "safe", "痛みが出たときは中止しましょう。"));
+  const sign = el("div", "sign");
+  const brand = el("div", "b", "Hatar");
+  brand.appendChild(el("span", null, "ACT"));
+  sign.appendChild(brand);
+  sign.appendChild(el("p", "s", "働く人を支え、職場を支える。"));
+  if (LIBE_NAME) sign.appendChild(el("p", "s", "リベシティ：" + LIBE_NAME));
+  mc.appendChild(sign);
+  ms.appendChild(mc);
+  body.appendChild(ms);
+
+  // 保存方法・注意書き
+  const sv = el("div", "save");
+  sv.appendChild(svg("bookmark"));
+  sv.appendChild(el("span", null,
+    "このページをブックマークするか、ホーム画面に追加すると、いつでも見返せます。写真やお名前は、このカルテにもサーバーにも保存されていません。"));
+  body.appendChild(sv);
+  body.appendChild(el("p", "disc",
+    "このカルテは撮影したときの立ち方の目安で、病気の診断ではありません。立ち方・服装・カメラの角度で変わります。"));
+}
+
+const data = readData();
+if (data) {
+  render(data);
+} else {
+  document.getElementById("app").appendChild(
+    el("p", "err", "カルテのデータを読み込めませんでした。QRコードをもう一度読み取ってください。"));
+}
+</script>
+</body>
+</html>
