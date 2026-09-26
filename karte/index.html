@@ -72,13 +72,15 @@ h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--orange);flex:non
 .gtop{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .gl{font-size:14px;font-weight:500}
 .gt{font-size:15px;font-weight:700;color:var(--navy);white-space:nowrap}
+.gt small{font-size:12px;font-weight:500;color:var(--sub);margin-left:6px}
 .grow.c .gt{color:var(--orange)}
-.tr{position:relative;height:26px;margin-top:2px}
-.tr .bar{position:absolute;left:0;right:0;top:10px;height:6px;border-radius:3px;background:#EEF0F6}
-.tr .band{position:absolute;top:6px;height:14px;border-radius:7px;background:rgba(37,50,124,.13)}
-.tr .mid{position:absolute;left:50%;top:2px;width:2px;height:22px;margin-left:-1px;background:var(--navy)}
-.tr .dot{position:absolute;top:4px;width:18px;height:18px;margin-left:-9px;border-radius:50%;
-  background:var(--navy);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.tr{position:relative;height:30px;margin-top:2px}
+.tr .bar{position:absolute;left:0;right:0;top:12px;height:6px;border-radius:3px;background:#EEF0F6}
+.tr .band{position:absolute;left:35%;width:30%;top:8px;height:14px;border-radius:7px;background:rgba(37,50,124,.13)}
+.tr .mid{position:absolute;left:50%;top:4px;width:2px;height:22px;margin-left:-1px;background:var(--navy)}
+.tr .dot{position:absolute;top:1px;width:28px;height:28px;margin-left:-14px;border-radius:50%;
+  background:var(--navy);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25);
+  color:#fff;font-size:13px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center}
 .grow.c .dot{background:var(--orange)}
 .ends{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);line-height:1.2}
 
@@ -152,8 +154,10 @@ const LIBE_NAME = "";  // リベシティでの名前。空なら表示しない
 // セルフケアの定型（app.py の EXERCISES と同じIDにそろえる）
 const EXERCISES = {
   chin:      ["あご引き", "5回", "頭の位置を整えやすくする運動です。"],
+  scm:       ["首の前ストレッチ（胸鎖乳突筋）", "左右20秒", "首の前側を伸ばしやすくします。ゆっくり行いましょう。"],
   neck:      ["首の横ストレッチ", "左右20秒", "頭をまっすぐに保ちやすくします。"],
-  chest:     ["胸ストレッチ", "20秒", "胸の前を伸ばして、肩の力を抜きやすくします。"],
+  chest:     ["胸ストレッチ（大胸筋）", "20秒", "胸の前を伸ばして、肩の力を抜きやすくします。"],
+  lats:      ["脇から背中のストレッチ（広背筋）", "左右20秒", "脇から背中を伸ばして、腕を上げやすくします。"],
   scap:      ["肩甲骨寄せ", "5回", "背中の筋肉を使って、胸を開きやすくします。"],
   side:      ["体側ストレッチ", "左右20秒", "体の横を伸ばして、左右のバランスを整えやすくします。"],
   twist:     ["座ったまま体ひねり", "左右5回", "背中をひねる動きを出しやすくします。"],
@@ -170,7 +174,8 @@ const EXERCISES = {
 // 測定結果の目盛り（app.py の GAUGE_ORDER と同じ順）。写真がないので側面は常に「後ろ｜前」
 const GAUGE_VIEWS = [
   { title: "正面", ends: ["右", "左"],
-    rows: [["頭の傾き", "tilt"], ["肩の高さ", "height"], ["腰の高さ", "height"], ["体の中心（左右）", "lat"]] },
+    rows: [["頭の傾き", "tilt"], ["頭の左右", "lat"], ["肩の高さ", "height"], ["肩の左右", "lat"],
+           ["腰の高さ", "height"], ["腰の左右", "lat"], ["体の中心（左右）", "lat"]] },
   { title: "側面", ends: ["後ろ", "前"],
     rows: [["頭の前後", "fb"], ["肩の前後", "fb"], ["腰まわりの前後", "fb"], ["体の中心（前後）", "com"]] },
 ];
@@ -235,46 +240,40 @@ function section(title) {
   return s;
 }
 
-// 目盛りの横に出す文（app.py の gauge_text と同じ言い方）
-function gaugeText(kind, v, p) {
-  if (kind === "tilt" || kind === "height") {
-    if (v === 0) return "0°";
-    const side = v > 0 ? "左" : "右";
-    return kind === "tilt" ? side + "へ " + Math.abs(v) + "°" : side + "が低い " + Math.abs(v) + "°";
-  }
-  if (v === null && p === 0) return "ほぼ中央";
-  const sgn = (v !== null && v !== 0) ? v : p;
-  const side = kind === "lat" ? (sgn > 0 ? "左" : "右") : (sgn > 0 ? "前" : "後ろ");
-  if (v === null) return side + "寄り";
-  if (v === 0) return kind === "fb" ? "ほぼ真上" : "ほぼ中央";
-  return side + "へ 約" + Math.abs(v) + "cm";
+// 目盛りの横に出す言葉（app.py の gauge_text と同じ言い方）。level＝ズレの度合い(0〜10)
+function gaugeText(kind, level, p) {
+  const lr = p > 0 ? "左" : "右";  // 本人基準
+  if (kind === "tilt") return level === 0 ? "まっすぐ" : lr + "に傾き";
+  if (kind === "height") return level === 0 ? "そろっている" : lr + "が低い";
+  if (kind === "lat") return level === 0 ? "中央" : lr + "寄り";
+  if (level === 0) return kind === "fb" ? "ほぼ真上" : "ほぼ中央";
+  return p > 0 ? "前寄り" : "後ろ寄り";
 }
 
-// 測定値を検証してそろえる。1項目 = [度・cm(null可), 点の位置, 帯の半幅, 範囲外なら1]
+// 測定値を検証してそろえる。1項目 = [度合い(0〜10), 点の位置(-100〜100), 傾きの角度(傾き以外は null)]
 function toGauge(g, kind) {
-  if (!Array.isArray(g) || g.length < 4) return null;
-  const [v, p, b, s] = g;
+  if (!Array.isArray(g) || g.length < 3) return null;
+  const [level, p, deg] = g;
+  if (!Number.isInteger(level) || level < 0 || level > 10) return null;
+  if (!Number.isInteger(p)) return null;
   const angle = kind === "tilt" || kind === "height";
-  const okV = Number.isInteger(v) && Math.abs(v) <= 99;
-  if (!(okV || (v === null && !angle))) return null;
-  if (!Number.isInteger(p) || !Number.isInteger(b)) return null;
-  return { v, p: Math.max(-100, Math.min(100, p)), b: Math.max(0, Math.min(100, b)), c: s === 1 };
+  const d = (angle && Number.isInteger(deg) && Math.abs(deg) <= 90) ? Math.abs(deg) : 0;
+  return { level, p: Math.max(-100, Math.min(100, p)), deg: d };
 }
 
 function gaugeRow(label, kind, g, ends) {
-  const row = el("div", "grow" + (g.c ? " c" : ""));
+  const row = el("div", "grow" + (g.level >= 3 ? " c" : ""));
   const top = el("div", "gtop");
   top.appendChild(el("span", "gl", label));
-  top.appendChild(el("span", "gt", gaugeText(kind, g.v, g.p)));
+  const gt = el("span", "gt", gaugeText(kind, g.level, g.p));
+  if (g.deg && g.level > 0) gt.appendChild(el("small", null, g.deg + "°"));
+  top.appendChild(gt);
   row.appendChild(top);
   const tr = el("div", "tr");
   tr.appendChild(el("div", "bar"));
-  const band = el("div", "band");
-  band.style.left = (50 - g.b / 2) + "%";
-  band.style.width = g.b + "%";
-  tr.appendChild(band);
+  tr.appendChild(el("div", "band"));
   tr.appendChild(el("div", "mid"));
-  const dot = el("div", "dot");
+  const dot = el("div", "dot", String(g.level));
   dot.style.left = (50 + g.p / 2) + "%";
   tr.appendChild(dot);
   row.appendChild(tr);
@@ -359,7 +358,7 @@ function render(data) {
     });
     s.appendChild(st);
     s.appendChild(el("p", "hint",
-      "縦線は基準（くるぶしの真上／左右の中央）、帯は目安の範囲です。立ち方・服装・カメラの角度で変わります。"));
+      "丸の中の数字はズレの度合い（0〜10）で、0〜2は目安の範囲内（帯の中）です。立ち方・服装・カメラの角度で変わる目安です。"));
     body.appendChild(s);
   }
 
